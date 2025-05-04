@@ -1,0 +1,73 @@
+# Docker Compose for Ollama with NVIDIA GPU Acceleration
+#
+# Prerequisites on Host:
+# 1. NVIDIA Drivers installed.
+# 2. NVIDIA Container Toolkit installed (nvidia-docker2).
+#    (See: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+#
+# This configuration utilizes the 'deploy' section for GPU resource allocation.
+
+version: '3.8' # Version 3.8 or higher recommended for deploy syntax clarity
+
+services:
+  ollama:
+    # Pinning a version is recommended for stability. Check Ollama releases.
+    # image: ollama/ollama:0.1.34
+    image: ollama/ollama:latest
+    container_name: ollama_gpu
+    restart: unless-stopped
+    # --- NVIDIA GPU Configuration ---
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              # 'all' makes all available GPUs accessible to the container
+              # Alternatively, specify a count: count: 1
+              count: all
+              # 'gpu' is the standard capability required for compute tasks
+              capabilities: [gpu]
+    # --- End NVIDIA GPU Configuration ---
+    environment:
+      # Optional: Helps ensure the container sees the GPUs allocated above.
+      # Might not be strictly necessary with the 'deploy' syntax on modern systems.
+      - NVIDIA_VISIBLE_DEVICES=all
+      # Optional: Ensure all necessary driver functions are available.
+      # - NVIDIA_DRIVER_CAPABILITIES=all # Or compute,utility
+
+      # Keep models loaded for performance (adjust as needed)
+      # Set in .env file or defaults to 24h
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE:-24h}
+      # Set Timezone (recommended) - Set in .env or defaults to UTC
+      - TZ=${TZ:-Etc/UTC}
+    volumes:
+      # Persist Ollama models and data
+      - ollama_gpu_data:/root/.ollama
+    ports:
+      # Expose Ollama API port on the host
+      - "11434:11434"
+    # Define networks if Ollama needs to communicate with other services
+    # defined in the same docker-compose file or across files using external networks.
+    networks:
+      - default_ollama # Example network name
+
+    # Optional: Basic healthcheck to see if the API is responsive
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"] # Checks if the API endpoint exists
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s # Give Ollama time to start up
+
+# Define the named volume for data persistence
+volumes:
+  ollama_gpu_data:
+    driver: local # Default driver
+
+# Define the network(s) used by the service
+networks:* This stack assumes the existence of pre-created Docker networks:
+    *   `default`: For internal communication with the Ollama service.
+    *   `proxy_network`: For exposure via the Caddy reverse proxy stack.
+    *   *(If these networks 
+  default_ollama:
+    driver: bridge # Default bridge network
