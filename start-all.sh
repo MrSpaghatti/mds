@@ -18,6 +18,7 @@ STACKS="
 02-files-cloud
 03-files-sync
 04-ai-tools
+05-games
 06-notes
 "
 # Add other stack directory names here as you create them
