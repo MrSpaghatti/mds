@@ -28,3 +28,10 @@ spagserv.uk {
       # No need to specify dns here, it's already set globally
     }
 }
+
+# === Notes (Trilium) ===
+# Ensure TRILIUM_NOTES_DOMAIN is set in your .env file
+{$TRILIUM_NOTES_DOMAIN} {
+    encode gzip
+    reverse_proxy trilium_notes:8080
+}
