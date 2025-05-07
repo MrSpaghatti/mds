@@ -6,7 +6,7 @@
 ## TODO
 - [ ] [netshoot](https://github.com/nicolaka/netshoot)
 - [ ] [trillium server?](https://github.com/zadam/trilium/wiki/Server-installation)
-- [ ] [online vscode](https://github.com/coder/code-server)
+- [ ] [online vscode](https://github.com/coder/code-server) [docker version?](https://github.com/ahmadnassri/docker-vscode-server/blob/master/docker-compose.yml)
 - [ ] owncloud vs nextcloud
 - [ ] [gitea?](https://gittea.dev/)
 - [ ] [doc2dash](https://github.com/hynek/doc2dash)/dash/customized docsets as llm context
