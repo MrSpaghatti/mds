@@ -11,6 +11,8 @@
 - [ ] owncloud vs nextcloud
 - [ ] [gitea?](https://gittea.dev/)
 - [ ] [doc2dash](https://github.com/hynek/doc2dash)/dash/customized docsets as llm context
+- [ ] [Borg](https://borgbackup.readthedocs.io/en/stable/)
+- [ ] tesseract-ocr, html5 canvas (logseq's canvas is nice inspiration), training/correction mode window
 
 ## 👋 Introduction
 
