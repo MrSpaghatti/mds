@@ -5,7 +5,7 @@
 
 ## TODO
 - [ ] [netshoot](https://github.com/nicolaka/netshoot)
-- [ ] [trillium server?](https://github.com/zadam/trilium/wiki/Server-installation)
+- [ ] [trillium server?](https://github.com/zadam/trilium/wiki/Server-installation) [docs](https://github.com/suitenumerique/docs)
 - [ ] [online vscode](https://github.com/coder/code-server) [docker version?](https://github.com/ahmadnassri/docker-vscode-server/blob/master/docker-compose.yml) [another one](https://github.com/gitpod-io/openvscode-server)
 - [ ] owncloud vs nextcloud
 - [ ] [gitea?](https://gittea.dev/)
