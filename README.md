@@ -9,6 +9,7 @@
 - [ ] [homarr](https://github.com/silverbulletmd/silverbullet) README w/ komodo
 - [ ] [vscodium docker](https://docs.linuxserver.io/images/docker-vscodium/)
 - [ ] owncloud vs nextcloud
+- [ ] [ddclient](https://hub.docker.com/r/linuxserver/ddclient)
 - [ ] [gitea?](https://gittea.dev/)
 - [ ] [doc2dash](https://github.com/hynek/doc2dash)/dash/customized docsets as llm context
 - [ ] [Borg](https://borgbackup.readthedocs.io/en/stable/)
