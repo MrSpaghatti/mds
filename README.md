@@ -7,6 +7,7 @@
 - [ ] [netshoot](https://github.com/nicolaka/netshoot)
 - [ ] silverbullet alternative
 - [ ] vscode web hosted
+- [ ] owncloud vs nextcloud
 
 ## 👋 Introduction
 
