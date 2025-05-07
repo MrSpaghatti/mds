@@ -20,11 +20,15 @@ services:
     container_name: homarr
     image: ghcr.io/homarr-labs/homarr:latest
     restart: unless-stopped
+    env_file:
+      - ../.env
     volumes:
       - /var/run/docker.sock:var/run/docker.sock
       - ./homarr/appdata:/appdata
     networks:
       - proxy_network
+    environment:
+      - SECRET_ENCRYPTION_KEY={$HOMARR_KEY}
     ports:
       - "7575:7575"
 
