@@ -5,9 +5,11 @@
 
 ## TODO
 - [ ] [netshoot](https://github.com/nicolaka/netshoot)
-- [ ] silverbullet alternative
-- [ ] vscode web hosted
+- [ ] [trillium server?](https://github.com/zadam/trilium/wiki/Server-installation)
+- [ ] [online vscode](https://github.com/coder/code-server)
 - [ ] owncloud vs nextcloud
+- [ ] [gitea?](https://gittea.dev/)
+- [ ] [doc2dash](https://github.com/hynek/doc2dash)/dash/customized docsets as llm context
 
 ## 👋 Introduction
 
