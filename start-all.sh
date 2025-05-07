@@ -1,7 +1,3 @@
-
-## Startup Script (`start-all.sh`)
-
-```bash
 #!/bin/sh
 # Start all Docker Compose stacks in a predefined order.
 # Assumes this script is run from the repository root.
