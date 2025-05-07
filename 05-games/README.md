@@ -55,6 +55,9 @@ Customize server settings in the `.env` file:
 - [itzg/minecraft-server Documentation](https://github.com/itzg/docker-minecraft-server)
 - [Minecraft Server Properties](https://minecraft.fandom.com/wiki/Server.properties)
 - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+- [Back to Overview](../README.md)
+- [Caddy Reverse Proxy Stack](../00-proxy/README.md)
+- [OwnCloud Stack](../02-files-cloud/README.md)
 
 ---
 
