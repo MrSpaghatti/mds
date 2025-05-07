@@ -1,47 +1,26 @@
 # /01-management/docker-compose.yml
-#
-# Portainer CE Stack
-# Purpose: Provides a web UI for managing the Docker environment.
-# Relies on shared 'proxy_network' and variables from ../.env
-# Mounts the Docker socket for control.
 
-# version: '3.8'
+# Komodo Management Stack
+# Purpose: Provides a web UI for managing Docker stacks and deployments.
 
 services:
-  portainer:
-    # Use Long Term Support (LTS) version for stability, pin if preferred
-    image: portainer/portainer-ce:lts # Example: portainer/portainer-ce:2.20.2
-    container_name: portainer
+  komodo:
+    image: komodo/komodo-core:latest
+    container_name: komodo
     restart: unless-stopped
     env_file:
-      - ../.env # Load variables (like TZ) from root .env file
-
+      - ../.env
     volumes:
-      # Mount Docker socket (read-only recommended) to allow Portainer to manage Docker
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      # Named volume for Portainer configuration persistence
-      - portainer_data:/data
-
-    environment:
-      # Value sourced from ../.env via env_file:
-      - TZ=${TZ:-Etc/UTC}
-
+      - komodo_data:/app/data 
     networks:
-      # Connect to the shared external proxy network for Caddy access
       - proxy_network
-
     ports:
-      # Expose the internal HTTPS port (9443) for Caddy to connect to.
-      # Do not map directly to the host unless bypassing Caddy.
-      - "9443"
-      # Port 8000 (agent) is usually not needed for single-node Docker management
+      - "9443:9443"
 
-# Define the named volume used by this service
 volumes:
-  portainer_data:
+  komodo_data:
     driver: local
 
-# Define the shared network used by this service as external
 networks:
   proxy_network:
     external: true

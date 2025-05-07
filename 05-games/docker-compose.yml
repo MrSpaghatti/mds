@@ -1,0 +1,56 @@
+# /05-games/docker-compose.yml
+#
+# Minecraft Server Stack
+# Purpose: Provides a Minecraft server for Java Edition using the itzg/docker-minecraft-server image.
+# Relies on variables from ../.env and bind mounts for persistence.
+
+# version: '3.8'
+
+# /05-games-minecraft/docker-compose.yml
+#
+# Minecraft Server Stack
+# Purpose: Provides a GPU-enabled Minecraft server for Java Edition using the itzg/docker-minecraft-server image.
+# Relies on variables from ../.env and bind mounts for persistence.
+
+# version: '3.8'
+
+services:
+  minecraft:
+    image: itzg/minecraft-server:latest
+    container_name: minecraft
+    restart: unless-stopped
+    env_file:
+      - ../.env # Load server environment variables
+    ports:
+      - "25565:25565" # Minecraft server port
+    volumes:
+      # Persist server data and configuration
+      - ./minecraft_data:/data
+    environment:
+      # Basic server settings
+      EULA: "TRUE" # REQUIRED: Accept Mojang's EULA
+      MEMORY: "6G" # Allocate 6GB of RAM; adjust based on your system
+      MAX_PLAYERS: "20"
+      DIFFICULTY: "normal"
+      ENABLE_RCON: "true"
+      RCON_PASSWORD: ${MINECRAFT_RCON_PASSWORD}
+      # Optional: Add GPU-related server-specific mods/plugins if needed
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1 # Use one GPU; adjust as needed
+              capabilities: [gpu]
+    runtime: nvidia # Required for NVIDIA GPU support
+    networks:
+      - proxy_network # Shared network for potential reverse proxy (optional)
+
+volumes:
+  minecraft_data:
+    driver: local
+
+networks:
+  proxy_network:
+    external: true
+    name: proxy_network
