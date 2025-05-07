@@ -7,7 +7,7 @@
 - [ ] [netshoot](https://github.com/nicolaka/netshoot)
 - [ ] [trillium server?](https://github.com/zadam/trilium/wiki/Server-installation) [silverbullet](https://github.com/silverbulletmd/silverbullet)
 - [ ] [homarr](https://github.com/silverbulletmd/silverbullet) README w/ komodo
-- [ ] [online vscode](https://github.com/coder/code-server) [docker version?](https://github.com/ahmadnassri/docker-vscode-server/blob/master/docker-compose.yml) [another one](https://github.com/gitpod-io/openvscode-server)
+- [ ] [vscodium docker](https://docs.linuxserver.io/images/docker-vscodium/)
 - [ ] owncloud vs nextcloud
 - [ ] [gitea?](https://gittea.dev/)
 - [ ] [doc2dash](https://github.com/hynek/doc2dash)/dash/customized docsets as llm context
