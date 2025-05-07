@@ -3,6 +3,11 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
+## TODO
+- [ ] [netshoot](https://github.com/nicolaka/netshoot)
+- [ ] silverbullet alternative
+- [ ] vscode web hosted
+
 ## 👋 Introduction
 
 Welcome! This repository provides a collection of curated, modular Docker Compose stacks designed for easy deployment and management of common self-hosted services. The philosophy is "one stack, one directory," promoting separation of concerns and making it simple to add, remove, or update individual service groups.
