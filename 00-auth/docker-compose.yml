@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    restart: unless-stopped
+    env_file:
+      - ../.env # Load variables from the root .env file
+    volumes:
+      - ./configuration.yml:/config/configuration.yml:ro
+      - authelia_data:/var/lib/authelia
+    expose:
+      - 9091 # Authelia's default port
+    networks:
+      - proxy_network
+    depends_on:
+      # Optional: if you have redis in another compose file for Authelia
+      # - redis # Ensure redis is started before Authelia if used
+      pass
+    healthcheck:
+      disable: true # Set to true if you are not using the built-in healthcheck
+      # test: ["CMD", "authelia", "healthcheck"]
+      # interval: 1m30s
+      # timeout: 10s
+      # retries: 3
+      # start_period: 40s
+
+volumes:
+  authelia_data:
+    driver: local
+
+networks:
+  proxy_network:
+    external: true
+    name: proxy_network

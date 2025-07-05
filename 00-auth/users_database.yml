@@ -1,0 +1,38 @@
+# Users database for Authelia (/00-auth/users_database.yml)
+#
+# This file stores user credentials when using the file-based authentication backend.
+# You MUST populate this file with at least one user for Authelia to function correctly.
+#
+# How to add a user:
+# 1. Start the Authelia container: `docker-compose up -d authelia` (from the `00-auth` directory).
+# 2. Execute the hash-password command in the running Authelia container:
+#    `docker-compose exec authelia authelia hash-password 'yourChosenStrongPassword'`
+#    (Replace 'yourChosenStrongPassword' with a strong password).
+# 3. Copy the complete hashed password output (it will look something like:
+#    `$argon2id$v=19$m=65536,t=1,p=4$RANDOM_SALT_STRING$ENCRYPTED_PASSWORD_HASH`).
+# 4. Edit this file (`00-auth/users_database.yml`) and add the user entry as shown below.
+#
+# Example:
+# users:
+#   admin:
+#     displayname: "Administrator"
+#     # Paste the hashed password from step 3 here
+#     password: "$argon2id$v=19$m=65536,t=1,p=4$bL4fTStY8M7N6Uv7XNFXzA$T.oN.UZHRv9g0G8gN/1ZtXjZq8EaJ0X2tjGtfAeVk/I"
+#     email: admin@example.com
+#     groups:
+#       - admins
+#       - users
+#   # Add more users as needed
+#   # anotheruser:
+#   #   displayname: "Another User"
+#   #   password: "PASTE_HASHED_PASSWORD_HERE"
+#   #   email: anotheruser@example.com
+#   #   groups:
+#   #     - users
+
+users: {} # Initialize with an empty users object. Add users above this line following the example.
+# It is critical that this file is not empty and has the 'users:' key.
+# If Authelia fails to start with "Unable to find users database file", ensure this file has content like:
+# users:
+#   # your users here
+# And that it's correctly mounted in docker-compose.yml.

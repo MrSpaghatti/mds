@@ -1,0 +1,42 @@
+# /07-code-server/docker-compose.yml
+#
+# Codium (VS Code Server by LinuxServer.io) Stack
+# Purpose: Provides a web-based VS Code IDE (Codium variant).
+# Relies on shared 'proxy_network' and variables from ../.env
+
+version: '3.8'
+
+services:
+  codium:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: codium
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - PUID=${DEFAULT_PUID}
+      - PGID=${DEFAULT_PGID}
+      - TZ=${TZ}
+      # - PASSWORD=your_password # Optional: Set a password here if not using Authelia or want double protection
+      # - SUDO_PASSWORD=your_sudo_password # Optional: If you need sudo access in the terminal
+      # - DEFAULT_WORKSPACE=/config/workspace # Optional: Default directory to open
+    volumes:
+      # Persists Codium configuration, extensions, user settings
+      # Use CODIUM_CONFIG_DIR from .env if set, otherwise default to ./data/codium_config relative to this compose file
+      - ${CODIUM_CONFIG_DIR:-./data/codium_config}:/config
+      # Mount your actual project/code directories here
+      # Example:
+      # - /path/to/your/projects:/config/workspace/projects
+      # - ../../:/config/workspace/mds_repo # Mounts the entire mono-repo root, adjust as needed
+    # No ports exposed to host; Caddy will handle access via proxy_network
+    expose:
+      - "8443" # Default port for linuxserver/code-server
+    networks:
+      - proxy_network
+    # depends_on: # Add dependencies if needed, e.g., a database for an extension
+    #   - some_other_service
+
+networks:
+  proxy_network:
+    external: true
+    name: proxy_network

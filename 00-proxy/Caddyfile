@@ -6,7 +6,60 @@
 {
   # Set the ACME DNS challenge provider to use Cloudflare for all sites
   acme_dns cloudflare $(cat cloudflare-zone-readwrite)
+
+  # Authelia common configuration
+  # Ensure AUTHELIA_DOMAIN (e.g., auth.yourdomain.com) and DOMAIN_NAME (e.g., yourdomain.com) are in your .env
+  autheliaAddress: "http://authelia:9091"
+  autheliaRedirectionUrl: "https://{$AUTHELIA_DOMAIN}"
 }
+
+# === Authelia Portal ===
+# This is where users log in to Authelia.
+# Ensure AUTHELIA_DOMAIN is set in your .env file (e.g., auth.yourdomain.com)
+{$AUTHELIA_DOMAIN} {
+    encode gzip
+    reverse_proxy authelia:9091 {
+        # Necessary for Authelia to function correctly behind a reverse proxy
+        header_up X-Original-URL {uri}
+    }
+    tls {
+      # No need to specify dns here, it's already set globally
+    }
+}
+
+# === Codium (VS Code Server) ===
+# Ensure CODIUM_DOMAIN is set in your .env file
+# This will be protected by Authelia.
+{$CODIUM_DOMAIN} {
+    encode gzip
+    forward_auth @autheliaAddress { # Using the global autheliaAddress
+        uri /api/verify?rd={$AUTHELIA_REDIRECTION_URL}
+        copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+    }
+    reverse_proxy codium:8443 # Default port for linuxserver/code-server
+    tls {
+      # No need to specify dns here, it's already set globally
+    }
+}
+
+# === Protected Test Route ===
+# Example of a route protected by Authelia
+# Ensure PROTECTED_TEST_DOMAIN is set in your .env file (e.g., protected.yourdomain.com)
+# This can be removed or repurposed later.
+# {$PROTECTED_TEST_DOMAIN} {
+#    @forbidden not remote_ip 192.168.1.0/24 # Example: allow local network
+#    forward_auth {$AUTHELIA_DOMAIN}?rm=GET { # Change to {$AUTHELIA_DOMAIN}
+#        uri /api/verify
+#        copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+#        # The 'authelia' name here must match the service name in 00-auth/docker-compose.yml
+#        # if Caddy and Authelia are in different Docker networks that can resolve each other.
+#        # If they are in the same docker-compose or same network, service name is fine.
+#        # Otherwise, use the host IP and mapped port if Authelia is exposed on the host.
+#    }
+#    reverse_proxy your_actual_service:port # Replace with a real service
+#    encode gzip
+# }
+
 
 spagserv.uk {
 
@@ -31,7 +84,15 @@ spagserv.uk {
 
 # === Notes (Trilium) ===
 # Ensure TRILIUM_NOTES_DOMAIN is set in your .env file
+# This will be protected by Authelia.
 {$TRILIUM_NOTES_DOMAIN} {
     encode gzip
+    forward_auth @autheliaAddress { # Using the global autheliaAddress
+        uri /api/verify?rd={$AUTHELIA_REDIRECTION_URL}
+        copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+    }
     reverse_proxy trilium_notes:8080
+    tls {
+      # No need to specify dns here, it's already set globally
+    }
 }
