@@ -34,7 +34,7 @@ Before you begin, ensure you have the following installed and configured:
 5.  **Cloudflare Account:** Your domain should be managed by Cloudflare if using the default Caddy configurations for DNS challenges.
 6.  **Cloudflare API Token for Caddy:** (Needs Zone:Read, DNS:Edit permissions for ACME DNS challenge).
 7.  **Basic Command-Line Familiarity.**
-8.  **(Optional but Recommended) `ddclient` setup:** If your server has a dynamic IP, configure `ddclient` (see `00-proxy/README.md` or `.env.template` for variables) to keep your Cloudflare DNS records updated. The `ddclient` service itself is not part of this core setup but variables are in `.env.template`.
+8.  **(Optional but Recommended) Dynamic DNS with `ddclient`:** If your server has a dynamic IP address, the `ddclient` service (included within the `00-proxy` stack) should be configured. This will keep your Cloudflare DNS records pointing to your server's changing IP. See the `DDCLIENT_*` variables in `.env.template` and the `00-proxy/README.md` for setup details.
 
 ## 🏗️ Project Structure
 
@@ -63,6 +63,10 @@ Before you begin, ensure you have the following installed and configured:
 ├── 07-code-server/         # Codium (VS Code Server) Stack
 │   ├── docker-compose.yml
 │   └── data/               # (Created by service) Codium config (default location)
+│
+├── 08-automation/          # Watchtower (Automatic Updates) Stack
+│   ├── docker-compose.yml
+│   └── README.md
 │
 └── # Other service directories (currently de-prioritized, can be re-added)
 # ├── 01-management/        # Example: Portainer
@@ -126,6 +130,7 @@ Each directory contains a specific service stack.
 *   `00-auth/`: Authelia (Authentication and SSO).
 *   `06-notes/`: NextTrilium (Trilium Notes - Hierarchical note-taking).
 *   `07-code-server/`: Codium (VS Code in the browser).
+*   `08-automation/`: Watchtower (Automatic Docker image updates).
 *   *(Other services like Portainer, OwnCloud, SyncThing, AI-Tools, Games are currently de-prioritized but their directories might still exist as a reference or can be re-added by uncommenting them in `start-all.sh` and ensuring their configs are present).*
 
 ## ▶️ Usage: Running Stacks
@@ -248,9 +253,32 @@ If you add more services:
 *   Check individual container logs: `cd <stack-dir> && docker-compose logs -f <service-name>`.
 *   Check Caddy logs: `cd 00-proxy && docker-compose logs -f caddy`.
 *   Check Authelia logs: `cd 00-auth && docker-compose logs -f authelia`.
-*   Verify network connectivity (`docker network inspect proxy_network`).
-*   Double-check your `.env` file (especially domain names and secrets) and DNS records.
+*   Check `ddclient` logs (if used): `cd 00-proxy && docker-compose logs -f ddclient`.
+*   Verify network connectivity (`docker network inspect proxy_network`). Ensure services that need to talk (e.g., Caddy to Authelia, Caddy to backend apps) are on this network.
+*   **Double-check your `.env` file:** Typos in domain names, secrets, or API keys are very common. Ensure `DOMAIN_NAME` is just the root domain (e.g., `example.com`) and subdomains are correctly derived or set (e.g., `AUTHELIA_DOMAIN=auth.example.com`).
+*   **DNS Records:** Verify that A or CNAME records for `{$AUTHELIA_DOMAIN}`, `{$TRILIUM_NOTES_DOMAIN}`, `{$CODIUM_DOMAIN}` (and any other services) are correctly pointing to your server's public IP in your DNS provider (e.g., Cloudflare). If using `ddclient`, check its logs to ensure it's updating IPs correctly.
+*   **Cloudflare Specifics:**
+    *   Ensure Cloudflare SSL/TLS mode is set to "Full (strict)" for best security once Caddy is issuing certs. "Flexible" can cause redirect loops.
+    *   Temporarily pause Cloudflare (set DNS to "DNS Only" instead of "Proxied") if you suspect Cloudflare's proxying is causing issues during initial Caddy setup, then re-enable once Caddy gets certs.
+    *   Check Cloudflare API token permissions for both Caddy (DNS challenge) and `ddclient` (DNS updates). They need appropriate Zone-level permissions.
+*   **Authelia Login Issues:**
+    *   **"Cannot GET /" on Authelia domain:** Caddy might not be proxying correctly to Authelia, or Authelia isn't running. Check Caddy and Authelia logs.
+    *   **Redirect Loops:** Often caused by incorrect `X-Forwarded-Proto` or `X-Forwarded-Host` headers if the proxy setup is complex, or Cloudflare SSL mode. The provided Caddy config usually handles this well. Also, ensure Authelia's `session.domain` in `00-auth/configuration.yml` (derived from `DOMAIN_NAME` in `.env`) is set to your main second-level domain (e.g., `example.com`, not `auth.example.com`).
+    *   **User Not Found / Incorrect Password:** Double-check `00-auth/users_database.yml` for correct username and hashed password. Ensure you restarted Authelia after changes.
+    *   **"Invalid Target URL" or similar errors:** Ensure the service you're trying to access (e.g., Trilium, Codium) has a corresponding rule in Authelia's `00-auth/configuration.yml` under `access_control.rules`.
+*   **Caddy Certificate Issues:**
+    *   Logs will show errors related to ACME challenges.
+    *   Ensure `CLOUDFLARE_API_TOKEN` in `.env` is correct and has `Zone:Read`, `DNS:Edit` permissions for the domain.
+    *   Ensure `ACME_EMAIL` in `.env` is set.
+    *   If you hit Let's Encrypt rate limits, you can temporarily use the staging CA by uncommenting `acme_ca https://acme-staging-v02.api.letsencrypt.org/directory` in `00-proxy/Caddyfile`'s global options, then switch back.
+*   **"502 Bad Gateway" from Caddy:**
+    *   Caddy can reach the network but the backend service (e.g., `trilium_notes`, `codium`) is not responding or not found at the specified internal address/port.
+    *   Check if the backend service container is running (`docker ps -a`).
+    *   Check logs of the backend service (`cd 06-notes && docker-compose logs -f trilium_notes`).
+    *   Ensure the service name in Caddy's `reverse_proxy` directive matches the service name in the backend's `docker-compose.yml` and that it's on the `proxy_network`.
+*   **Permission Issues with Volumes:**
+    *   If a service fails to start or write data, it might be due to incorrect ownership of bind-mounted host directories. Ensure `DEFAULT_PUID`/`DEFAULT_PGID` in `.env` match your user's `id -u` / `id -g`, and that any custom data directories you created on the host are owned by this PUID/PGID.
 *   Consult official documentation for Caddy, Authelia, NextTrilium (Trilium Wiki), and LinuxServer.io Code-Server.
-*   The `TODO` section at the top of this README may contain items previously considered or future ideas, which are not part of the current core setup.
+*   The `TODO` section at the top of this README (if still present) may contain items previously considered or future ideas, which are not part of the current core setup.
 
 _Previously considered services (can be re-added if desired, check old commits for configs): Portainer, OwnCloud, SyncThing, Ollama, Homarr, etc._

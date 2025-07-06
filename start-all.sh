@@ -17,6 +17,7 @@ STACKS="
 00-auth
 06-notes
 07-code-server
+08-automation
 # 01-management
 # 02-files-cloud
 # 03-files-sync

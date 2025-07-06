@@ -14,6 +14,7 @@ Caddy acts as the single entry point for web traffic to your self-hosted service
 ## 📦 Services Included
 
 - **`caddy`**: The Caddy v2 web server/reverse proxy.
+- **`ddclient`**: (Optional, but included in this stack) A client for updating dynamic DNS records with services like Cloudflare. Essential if your server's public IP address changes.
 
 ---
 
@@ -27,34 +28,31 @@ Caddy acts as the single entry point for web traffic to your self-hosted service
   - Recommended permissions: `Zone:Read`, `DNS:Edit` for the relevant zone(s).
   - [Creating Cloudflare API Tokens](https://developers.cloudflare.com/fundamentals/api/reference/create-token/).
   - **Note:** This token *might* be different from the one used by `ddclient` if you prefer more granular permissions.
+- **Cloudflare API Token (for ddclient DNS Updates):** If using `ddclient`, you'll need a separate Cloudflare API token with `Zone:DNS:Edit` permissions for the specific zone `ddclient` will manage. See `ddclient` configuration below and the root `../.env.template`.
 
 ---
 
 ## ⚙️ Configuration
 
-### 1. Caddy Image with Cloudflare Plugin (CRITICAL)
+### 1. Caddy
+
+#### 1.1 Caddy Image with Cloudflare Plugin (CRITICAL)
 - The standard `caddy:latest` or `caddy:<version>-alpine` images **do not** include the Cloudflare DNS plugin.
-- You **must** edit this stack's `docker-compose.yml` to use an image that bundles the required plugin. A common choice is:
-  ```yaml
-  services:
-    caddy:
-      # Use an image built with the Cloudflare plugin
-      # Check for specific version tags if preferred over latest
-      image: ghcr.io/caddybuilds/caddy-cloudflare:latest
-      # ... rest of the service definition
-  ```
+- The `docker-compose.yml` in this directory is pre-configured to use `ghcr.io/caddybuilds/caddy-cloudflare:latest`. Ensure this or a similar plugin-enabled image is used if you modify it.
 - Failure to use a compatible image will result in errors during certificate acquisition when using the DNS challenge.
 
-### 2. Environment Variables (`../.env`)
+#### 1.2 Caddy Environment Variables (`../.env`)
 - The Caddy service reads these variables from the root `.env` file:
   - `ACME_EMAIL`: Your email address for Let's Encrypt registration notifications.
-  - `CLOUDFLARE_API_TOKEN`: The Cloudflare API token created specifically for Caddy's DNS challenges (with Zone:Read and DNS:Edit permissions). **Ensure the variable name here matches the one expected by the Caddy plugin image you use (usually `CLOUDFLARE_API_TOKEN`).**
+  - `CLOUDFLARE_API_TOKEN`: The Cloudflare API token created specifically for Caddy's DNS challenges (with Zone:Read and DNS:Edit permissions for the relevant zone).
   - `TZ`: Sets the container timezone.
+  - Domain variables like `DOMAIN_NAME`, `AUTHELIA_DOMAIN`, `TRILIUM_NOTES_DOMAIN`, `CODIUM_DOMAIN` which are used within the `Caddyfile`.
 
-### 3. `Caddyfile` Configuration
+#### 1.3 `Caddyfile` Configuration
 - The primary Caddy configuration lives in the `Caddyfile` located **within this directory** (`./Caddyfile`).
-- **You must edit this file** to define your domains and how they proxy to your backend services.
-- **Global Options Block:** Ensure your `Caddyfile` includes a global options block to configure ACME email and the DNS challenge provider:
+- This file is already set up to use environment variables for domain names and Authelia integration.
+- **You must edit this file** if you add new services or change existing proxy setups.
+- **Global Options Block:** The `Caddyfile` includes a global options block using environment variables:
   ```caddyfile
   {
       # Your email from .env
@@ -84,10 +82,30 @@ Caddy acts as the single entry point for web traffic to your self-hosted service
   ```
 - Refer to the [Caddyfile Documentation](https://caddyserver.com/docs/caddyfile) for syntax and directives.
 
-### 4. Networking
+#### 1.4 Caddy Networking
 - The Caddy container is attached to the external `proxy_network`.
 - It listens on host ports `80` and `443`.
 - It communicates with backend services using their container names and ports *over the `proxy_network`* (unless the backend uses `network_mode: host`, in which case Caddy connects via `localhost:<port>`).
+
+### 2. ddclient (Dynamic DNS Updater)
+
+The `ddclient` service is included in this stack's `docker-compose.yml` to automatically update your Cloudflare DNS records if your server has a dynamic public IP address.
+
+#### 2.1 ddclient Configuration (`../.env`)
+- `ddclient` is configured primarily through environment variables set in the root `../.env` file. The `linuxserver/ddclient` image uses these to generate its internal `ddclient.conf`.
+- Key variables:
+  - `DDCLIENT_PUID` & `DDCLIENT_PGID`: User/Group IDs for the `ddclient` process (usually `DEFAULT_PUID`/`DEFAULT_PGID`).
+  - `TZ`: Timezone.
+  - `DDCLIENT_CLOUDFLARE_EMAIL`: Your Cloudflare login email (may sometimes be optional with token auth, but good to set).
+  - `DDCLIENT_CLOUDFLARE_API_TOKEN`: **Crucial.** A Cloudflare API token with **`Zone:DNS:Edit`** permissions for the *specific zone* defined in `DDCLIENT_CLOUDFLARE_ZONE`. This token tells Cloudflare that `ddclient` is authorized to change DNS records.
+  - `DDCLIENT_CLOUDFLARE_ZONE`: Your root domain name that is managed in Cloudflare (e.g., `yourdomain.com`). This must match one of your Cloudflare zones.
+  - `DDCLIENT_CLOUDFLARE_RECORDS`: A comma-separated list of DNS records (hostnames) within the specified zone that `ddclient` should update. Example: `@,auth,notes,code` (this would update `yourdomain.com`, `auth.yourdomain.com`, etc.). **These records must already exist in Cloudflare as A or AAAA records.** `ddclient` updates their IP; it doesn't create them.
+- Refer to the `../.env.template` for the exact variable names and detailed comments.
+
+#### 2.2 ddclient Operation
+- On startup and at regular intervals, `ddclient` checks your server's current public IP address.
+- If the IP has changed from what Cloudflare has for your specified records, `ddclient` uses the API token to update those DNS records in Cloudflare to point to the new IP.
+- Logs for `ddclient` can be viewed with `docker-compose logs -f ddclient`. Check these logs for successful updates or any errors.
 
 ---
 
@@ -124,9 +142,10 @@ Caddy acts as the single entry point for web traffic to your self-hosted service
 
 ## 💾 Data Persistence
 
-- **`caddy_data`:** A Docker named volume storing acquired SSL certificates, OCSP staples, and other operational state. **Crucial for persistence.**
-- **`caddy_config`:** A Docker named volume storing backups of Caddy's configuration.
-- **`./Caddyfile`:** The primary configuration file is bind-mounted directly from the host into the container.
+- **`caddy_data`:** A Docker named volume storing acquired SSL certificates, OCSP staples, and other Caddy operational state. **Crucial for persistence.**
+- **`caddy_config`:** A Docker named volume storing backups of Caddy's configuration (though the primary `Caddyfile` is a bind mount).
+- **`./Caddyfile`:** The primary Caddy configuration file is bind-mounted directly from the host into the Caddy container.
+- **`./ddclient_config`:** This directory (bind-mounted as `/config` into the `ddclient` container) will store `ddclient`'s runtime configuration and cache. The `linuxserver/ddclient` image typically generates `ddclient.conf` here based on your `.env` variables.
 
 ---
 
