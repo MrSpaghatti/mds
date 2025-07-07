@@ -6,7 +6,8 @@ services:
     container_name: authelia
     restart: unless-stopped
     env_file:
-      - ../.env # Load variables from the root .env file
+      - ../.env  # Load global .env first
+      - ./.env   # Load service-specific .env (overrides globals, adds specifics)
     volumes:
       - ./configuration.yml:/config/configuration.yml:ro
       - authelia_data:/var/lib/authelia
@@ -14,10 +15,9 @@ services:
       - 9091 # Authelia's default port
     networks:
       - proxy_network
-    depends_on:
-      # Optional: if you have redis in another compose file for Authelia
-      # - redis # Ensure redis is started before Authelia if used
-      pass
+    # depends_on: # No hard dependencies within this specific compose file for now.
+                 # If you add, e.g., a Redis service in this file for Authelia, uncomment and use:
+                 #  - redis_service_name
     healthcheck:
       disable: true # Set to true if you are not using the built-in healthcheck
       # test: ["CMD", "authelia", "healthcheck"]

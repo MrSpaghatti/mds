@@ -12,7 +12,8 @@ services:
     container_name: codium
     restart: unless-stopped
     env_file:
-      - ../.env
+      - ../.env  # Load global .env first
+      - ./.env   # Load service-specific .env (overrides globals, adds specifics)
     environment:
       - PUID=${DEFAULT_PUID}
       - PGID=${DEFAULT_PGID}

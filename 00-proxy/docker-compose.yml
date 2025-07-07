@@ -16,7 +16,8 @@ services:
     container_name: caddy
     restart: unless-stopped
     env_file:
-      - ../.env # Load variables from the root .env file
+      - ../.env  # Load global .env first
+      - ./.env   # Load service-specific .env (overrides globals, adds specifics)
 
     ports:
       # Essential ports for web traffic - MUST be exposed on host
@@ -54,7 +55,8 @@ services:
     container_name: ddclient
     restart: unless-stopped
     env_file:
-      - ../.env
+      - ../.env  # Load global .env first
+      - ./.env   # Load service-specific .env (overrides globals, adds specifics)
     environment:
       - PUID=${DEFAULT_PUID}
       - PGID=${DEFAULT_PGID}
