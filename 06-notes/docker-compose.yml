@@ -12,7 +12,8 @@ services:
     container_name: trilium_notes
     restart: unless-stopped
     env_file:
-      - ../.env # Load variables from the root .env file
+      - ../.env  # Load global .env first
+      - ./.env   # Load service-specific .env (overrides globals, adds specifics)
     environment:
       # TRILIUM_DATA_DIR is used internally by the image.
       # We map a volume to this path inside the container.

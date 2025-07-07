@@ -94,19 +94,18 @@ Follow these steps carefully to prepare your environment:
 3.  **Configure Environment Variables (`.env`):**
     *   **This is the most critical configuration step.**
     *   Copy the template: `cp .env.template .env`
-    *   **Edit the `.env` file** (`nano .env`, `vim .env`, etc.).
-    *   **Carefully replace ALL placeholder values** with your actual information:
-        *   `TZ`: Your timezone.
-        *   `DEFAULT_PUID`, `DEFAULT_PGID`: Your user/group IDs (`id -u`, `id -g`).
-        *   `DOMAIN_NAME`: Your root domain (e.g., `example.com`).
-        *   `ACME_EMAIL`: Your email for Let's Encrypt.
-        *   `CLOUDFLARE_API_TOKEN`: For Caddy's DNS challenge.
-        *   `AUTHELIA_DOMAIN`: Subdomain for Authelia (e.g., `auth.example.com`). This is `${AUTHELIA_DOMAIN}` in Caddy/Authelia configs.
-        *   `AUTHELIA_JWT_SECRET`: **Generate a strong random string** (e.g., `openssl rand -hex 32`).
-        *   `TRILIUM_NOTES_DOMAIN`: Subdomain for Trilium Notes (e.g., `notes.example.com`).
-        *   `CODIUM_DOMAIN`: Subdomain for Codium (e.g., `code.example.com`).
-        *   Review other variables like `DDCLIENT_*` if using dynamic DNS.
-    *   **Security:** Use a password manager. Ensure API tokens have minimum required permissions. `.gitignore` prevents `.env` commit.
+    *   **Edit the root `.env` file** (`nano .env`, `vim .env`, etc.) located in the main project directory.
+    *   **Carefully replace ALL placeholder values in this root `.env` file** with your actual global and shared information. This file is the primary source for most configurations.
+        *   Examples: `TZ`, `DEFAULT_PUID`, `DEFAULT_PGID`, `DOMAIN_NAME`, `ACME_EMAIL`, `CLOUDFLARE_API_TOKEN`, `AUTHELIA_DOMAIN`, `AUTHELIA_JWT_SECRET`, `TRILIUM_NOTES_DOMAIN`, `CODIUM_DOMAIN`, `DDCLIENT_*` variables, `WATCHTOWER_*` variables, etc.
+    *   **Layered `.env` Files (New Structure):**
+        *   This project now uses a layered approach for environment variables.
+        *   The primary, global configuration is sourced from the root `.env` file you just edited.
+        *   Each service stack directory (e.g., `00-proxy/`, `00-auth/`) can also contain its own local `.env` file.
+        *   When a service starts, Docker Compose loads variables first from the root `../.env` file, and then from the service's local `./.env` file (if it exists).
+        *   Variables set in a local `./.env` file will **override** those from the root `.env` file for that specific service stack.
+        *   Use local `./.env` files for service-specific overrides or for variables that only pertain to a single stack (e.g., a debug flag for a specific service).
+        *   Each service directory contains a `./.env.example` file. You can copy this to `./.env` within that service directory if you need to make local overrides or add stack-specific variables. For most cases, you might not need local `.env` files if all your settings are global.
+    *   **Security:** Use a password manager for secrets. Ensure API tokens have minimum required permissions. The `.gitignore` file prevents any `.env` files from being committed.
 4.  **Configure Authelia Users:**
     *   After starting Authelia (e.g., `cd 00-auth && docker-compose up -d authelia`), you need to create users.
     *   Edit `00-auth/users_database.yml`. Follow the instructions within that file.
