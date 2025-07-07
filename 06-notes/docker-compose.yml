@@ -1,0 +1,41 @@
+# /06-notes/docker-compose.yml
+#
+# Trilium Notes Stack (using triliumnext/notes image)
+# Purpose: Self-hosted hierarchical note-taking application.
+# Relies on shared 'proxy_network' and variables from ../.env
+
+version: '3.8'
+
+services:
+  trilium_notes: # Clear service name for Caddy
+    image: triliumnext/notes:latest
+    container_name: trilium_notes
+    restart: unless-stopped
+    env_file:
+      - ../.env # Load variables from the root .env file
+    environment:
+      # TRILIUM_DATA_DIR is used internally by the image.
+      # We map a volume to this path inside the container.
+      - TRILIUM_DATA_DIR=/home/node/trilium-data
+      - TZ=${TZ}
+    # No ports exposed to host; Caddy will handle access via proxy_network
+    # ports:
+    #   - '8080:8080' # Exposed only to Docker network, not host
+    expose:
+      - "8080" # Expose port for Caddy to connect to on the proxy_network
+    volumes:
+      # Data persistence for Trilium notes.
+      # You can change './data' to an absolute path on your host if preferred,
+      # e.g., /mnt/docker_data/trilium_notes:/home/node/trilium-data
+      # The TRILIUM_NOTES_DATA_DIR from .env can be used here if you want it configurable.
+      - ${TRILIUM_NOTES_DATA_DIR:-./data}:/home/node/trilium-data
+      # Mount timezone and localtime for consistent time within the container
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - proxy_network
+
+networks:
+  proxy_network:
+    external: true
+    name: proxy_network

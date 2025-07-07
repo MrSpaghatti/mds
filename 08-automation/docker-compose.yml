@@ -1,0 +1,47 @@
+# /08-automation/docker-compose.yml
+#
+# Watchtower Stack
+# Purpose: Automatically updates running Docker containers to their latest image versions.
+# Relies on variables from ../.env
+
+version: '3.8'
+
+services:
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      # Interval to check for updates (e.g., "0 0 4 * * *" for 4 AM daily - cron expression)
+      # Or simpler interval like "86400" (seconds for 24 hours)
+      # Using WATCHTOWER_POLL_INTERVAL for seconds-based interval from .env
+      - WATCHTOWER_POLL_INTERVAL=${WATCHTOWER_POLL_INTERVAL:-86400} # Default to 24 hours
+      - WATCHTOWER_CLEANUP=${WATCHTOWER_CLEANUP:-true} # Remove old images after update
+      - WATCHTOWER_LABEL_ENABLE=${WATCHTOWER_LABEL_ENABLE:-false} # Set to true to only update containers with label "com.centurylinklabs.watchtower.enable=true"
+      - TZ=${TZ}
+      # Optional: Notifications (uncomment and configure in .env if you use any)
+      # - WATCHTOWER_NOTIFICATIONS=email # Other options: slack, msteams, gotify, shoutrrr
+      # - WATCHTOWER_NOTIFICATION_EMAIL_FROM=watchtower@yourdomain.com
+      # - WATCHTOWER_NOTIFICATION_EMAIL_TO=your-email@yourdomain.com
+      # - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.yourprovider.com
+      # - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=587
+      # - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=your-smtp-username
+      # - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${SMTP_PASSWORD} # Store in .env
+      # - WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2 # Send email 2 seconds after first, if more updates
+      # For Shoutrrr (supports many services):
+      # - WATCHTOWER_NOTIFICATIONS=shoutrrr
+      # - WATCHTOWER_NOTIFICATION_URL="gotify://gotify.yourdomain.com/Axxxxxxxxxxxxxx" # Example for Gotify
+      # - WATCHTOWER_NOTIFICATION_TEMPLATE={{range .}}{{.Message}}{{println}}{{end}} # Customize notification format
+    volumes:
+      # Mount the Docker socket to allow Watchtower to interact with Docker daemon
+      - /var/run/docker.sock:/var/run/docker.sock
+    # No ports needed for Watchtower itself
+
+# Note: Watchtower does not need to be on the proxy_network as it doesn't serve content.
+# It interacts directly with the Docker daemon on the host.
+# If you want to restrict Watchtower to only update specific containers,
+# set WATCHTOWER_LABEL_ENABLE=true and then add the label
+# `com.centurylinklabs.watchtower.enable=true` to the services you want auto-updated.
+# By default (WATCHTOWER_LABEL_ENABLE=false), it monitors all running containers started from an image with a newer version available.

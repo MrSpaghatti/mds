@@ -14,12 +14,15 @@ echo "========================="
 # Proxy often good first or last. Stacks with dependencies later.
 STACKS="
 00-proxy
-01-management
-02-files-cloud
-03-files-sync
-04-ai-tools
-05-games
+00-auth
 06-notes
+07-code-server
+08-automation
+# 01-management
+# 02-files-cloud
+# 03-files-sync
+# 04-ai-tools
+# 05-games
 "
 # Add other stack directory names here as you create them
 # Example:

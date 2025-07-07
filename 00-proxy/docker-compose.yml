@@ -49,11 +49,37 @@ services:
       # Required to bind ports 80/443 as non-root user inside container
       - NET_BIND_SERVICE
 
+  ddclient:
+    image: lscr.io/linuxserver/ddclient:latest
+    container_name: ddclient
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - PUID=${DEFAULT_PUID}
+      - PGID=${DEFAULT_PGID}
+      - TZ=${TZ}
+      # Specific ddclient variables will be sourced from ../.env via env_file
+      # Ensure DDCLIENT_CLOUDFLARE_EMAIL, DDCLIENT_CLOUDFLARE_API_TOKEN,
+      # DDCLIENT_CLOUDFLARE_ZONE, DDCLIENT_CLOUDFLARE_RECORDS are set in .env
+    volumes:
+      - ./ddclient_config:/config # Persistent configuration for ddclient
+    # network_mode: host # Option 1: If ddclient needs to directly see host's IP. Simpler for IP detection.
+                         # This means it won't use the proxy_network.
+                         # Ensure no port conflicts if other services use host network.
+    networks:
+      - proxy_network # Option 2: If ddclient can determine public IP via a check service (default for image).
+                      # This keeps it on the defined network with Caddy.
+    depends_on:
+      - caddy # Optional: Start after Caddy, though not strictly dependent.
+
 # Define the named volumes used by this service
 volumes:
   caddy_data:
     driver: local # Or specify another driver if needed
   caddy_config:
+    driver: local
+  ddclient_config: # Named volume for ddclient configuration (if not using bind mount above)
     driver: local
 
 # Define the shared network used by this service as external

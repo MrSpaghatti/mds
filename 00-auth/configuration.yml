@@ -1,0 +1,177 @@
+# Authelia Configuration: /00-auth/configuration.yml
+#
+# For a full explanation of the configuration options, see:
+# https://www.authelia.com/configuration/
+
+# --- Global Configuration ---
+default_redirection_url: https://auth.{$DOMAIN_NAME} # Make sure DOMAIN_NAME is in your .env
+
+theme: default # Other options: light, dark, grey, auto
+
+# --- Server Configuration ---
+server:
+  host: 0.0.0.0
+  port: 9091
+  # path: "" # Uncomment and set if running Authelia under a subpath e.g. /authelia
+
+# --- Logging ---
+log:
+  level: info # Options: trace, debug, info, warn, error
+  # format: text # Options: text, json
+  # file_path: /var/log/authelia.log # Uncomment to log to a file
+
+# --- Session ---
+session:
+  name: authelia_session
+  secret: {$AUTHELIA_JWT_SECRET} # !! IMPORTANT: Set a strong, random string in .env
+  expiration: 1h # e.g. 1h, 30m, 7d
+  inactivity: 5m # e.g. 5m, 10m
+  domain: {$DOMAIN_NAME} # The main domain Authelia is served from, e.g. example.com (not auth.example.com)
+  # remember_me_duration: 1M # e.g. 1M for 1 month. Requires session.secret to be static.
+
+# --- Authentication Backends ---
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+    password:
+      algorithm: argon2id # Other options: sha512
+      # For argon2id
+      iterations: 1
+      memory: 1024 # KiB
+      parallelism: 8
+      key_length: 32
+      salt_length: 16
+    # search_case_insensitive: false # Set to true to make usernames case-insensitive
+
+# --- Access Control ---
+access_control:
+  default_policy: deny # Recommended: deny by default, then allow specific resources
+  rules:
+    # - domain: "service.{$DOMAIN_NAME}"
+    #   policy: bypass # Example: Allow unauthenticated access to service.example.com
+    # - domain: "secure.{$DOMAIN_NAME}"
+    #   policy: one_factor # Example: Require one-factor auth for secure.example.com
+    # - domain: "*.{$DOMAIN_NAME}" # Catch-all for subdomains
+    #   policy: deny # Deny by default if no other rule matches for subdomains
+
+    # Example rule for Trilium Notes - this will be refined later
+    - domain: "notes.{$DOMAIN_NAME}"
+      policy: one_factor
+      # subject: "group:admins" # Example: only allow users in the 'admins' group
+
+    # Rule for Codium
+    - domain: "code.{$DOMAIN_NAME}"
+      policy: one_factor
+      # subject: "group:developers" # Example: only allow users in the 'developers' group
+
+# --- Notifier (Optional, for password resets, etc.) ---
+# notifier:
+#   filesystem:
+#     filename: /tmp/authelia/notification.txt
+  # smtp:
+  #   address: smtp.example.com:587
+  #   username: user@example.com
+  #   password: {$SMTP_PASSWORD} # Store in .env
+  #   sender: Authelia <authelia@example.com>
+  #   subject: "Authelia Notification"
+  #   startup_check_address: test@authelia.com
+  #   disable_require_tls: false # Set to true if SMTP server doesn't support TLS
+
+# --- Identity Providers (Optional, for OAuth/OIDC) ---
+# identity_providers:
+#   oidc:
+#     ## Register a new client with your OIDC provider.
+#     ## For example if you wanted to use Google's OIDC:
+#     # discovery_url: https://accounts.google.com/.well-known/openid-configuration
+#     # client_id: 'my-client-id'
+#     # client_secret: {$OIDC_CLIENT_SECRET} # Store in .env
+#     # scopes:
+#     #  - openid
+#     #  - profile
+#     #  - email
+#     # userinfo_signed_response_alg: none # For Google this may need to be set to none.
+
+# --- Regulation (Optional, for multi-factor requirement based on country) ---
+# regulation:
+#   max_retries: 3
+#   find_time: 2m
+#   ban_time: 5m
+
+# --- Storage (Optional, for persisting regulation data, etc.) ---
+# storage:
+#   # local: # Not recommended for production, data lost on restart
+#   #   path: /var/lib/authelia/db.sqlite3
+#   mysql:
+#     address: tcp://mysql:3306/authelia
+#     username: authelia
+#     password: {$MYSQL_PASSWORD} # Store in .env
+#   postgres:
+#     address: postgres://authelia:{$POSTGRES_PASSWORD}@postgres:5432/authelia?sslmode=disable # Store in .env
+#     # schema: public # Optional
+
+# --- Telemetry (Optional, for Prometheus metrics) ---
+# telemetry:
+#   metrics:
+#     enabled: false
+#     address: tcp://0.0.0.0:9959/metrics
+#     buffers:
+#       read: 0
+#       write: 0
+
+# --- TOTP (Optional, for Time-based One-Time Passwords) ---
+# totp:
+#   issuer: authelia.com
+#   # algorithm: SHA1 # Default is SHA1, others: SHA256, SHA512
+#   # period: 30 # Default is 30 seconds
+#   # digits: 6 # Default is 6 digits
+#   # skew: 1 # Default is 1 (allows 1 code before and 1 code after current)
+
+# --- WebAuthn (Optional, for FIDO2/WebAuthn Passkeys) ---
+# webauthn:
+#   issuer: authelia.com
+#   # display_name: Authelia # Display name for the authenticator
+#   # attestation_conveyance_preference: indirect # Options: none, indirect, direct
+#   # user_verification: preferred # Options: discouraged, preferred, required
+#   # timeout: 60s
+#   # disable: false
+
+# --- Duo (Optional, for Duo Push 2FA) ---
+# duo_api:
+#   hostname: {$DUO_API_HOSTNAME} # Store in .env
+#   integration_key: {$DUO_INTEGRATION_KEY} # Store in .env
+#   secret_key: {$DUO_SECRET_KEY} # Store in .env
+#   # groups: # Optional: map Authelia groups to Duo groups
+#   #   - authelia_group_name: duo_group_name
+
+# This is where user data will be stored.
+# You MUST create this file and populate it with at least one user.
+# Example users_database.yml:
+# users:
+#   john:
+#     displayname: "John Doe"
+#     password: "$argon2id$v=19$m=1024,t=1,p=8$RANDOM_SALT_STRING$ENCRYPTED_PASSWORD_HASH" # Generate with `authelia hash-password 'your_password'`
+#     email: john.doe@example.com
+#     groups:
+#       - admins
+#       - dev
+#   jane:
+#     displayname: "Jane Doe"
+#     password: "$argon2id$v=19$m=1024,t=1,p=8$RANDOM_SALT_STRING$ENCRYPTED_PASSWORD_HASH"
+#     email: jane.doe@example.com
+#     groups:
+#       - users
+
+# Create an empty users_database.yml next to this file, or Authelia might not start.
+# Then, exec into the Authelia container to create users:
+# 1. docker-compose exec -u node authelia authelia hash-password 'yourChosenPassword'
+# 2. Copy the output.
+# 3. Edit 00-auth/users_database.yml and add your user.
+# Example:
+# users:
+#   myuser:
+#     displayname: "My User"
+#     password: "PASTE_HASH_HERE"
+#     email: "myuser@example.com"
+#     groups:
+#       - admins
+#       - users
